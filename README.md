@@ -1,46 +1,39 @@
-# Telegram_bot
 import requests
 from bs4 import BeautifulSoup
-from openpyxl import Workbook
 import time
 from telegram import Bot
 
-#Telegram-Bot
+# Telegram Bot məlumatları
 BOT_TOKEN = "7961154905:AAE39dcHN3GqA-la8WSJlboHTJLSHTtaH_4"
 CHAT_ID = "5882097855"
 
 bot = Bot(token=BOT_TOKEN)
 
-#Define URL (Book)
-
 def scraping_and_sent():
-   url="https://emlak.az/"
-   time.sleep(5)
+    url = "https://www.topaz.az/"
+    headers = {"User-Agent": "Mozilla/5.0"}
 
-   headers = {"User-Agent": "Mozilla/5.0"}
-   response = requests.get(url, headers=headers)
-   soup = BeautifulSoup(response.text, "html.parser")
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
 
-# Scrape listing
-   emlak=soup.find_all("div", class_="ticket-item")[1:2]
+    # Əsas xəbərlərdən birini götürürük (ilk xəbər)
+    news_item = soup.find("div", class_="main-news-item")
+    if news_item:
+        title = news_item.find("h3").get_text(strip=True) if news_item.find("h3") else "Başlıq tapılmadı"
+        description = news_item.find("p").get_text(strip=True) if news_item.find("p") else "Açıqlama yoxdur"
+        link = news_item.find("a")["href"] if news_item.find("a") else "#"
 
+        mesaj = f"""
+<b>Topaz Xəbəri</b>
+📰 <b>{title}</b>
+🗒️ {description}
+🔗 <a href="https://www.topaz.az{link}">Ətraflı oxu</a>
+        """
+        bot.send_message(chat_id=CHAT_ID, text=mesaj, parse_mode="HTML")
+    else:
+        bot.send_message(chat_id=CHAT_ID, text="Xəbər tapılmadı.", parse_mode="HTML")
 
-   for product in emlak:
-
-    price_tag = product.find("div", class_="price-ticket")
-    attribute_tag = product.find("div", class_="description-ticket")
-
-
-    price=price_tag.get_text(strip=True) if price_tag else ""
-    attribute=attribute_tag.get_text(strip=True) if attribute_tag else ""
-
-#
-    mesaj = f"""
-🏠  <b>{attribute}</b>
-💰 Qiymət: <i>{price}</i>
-"""
-    bot.send_message(chat_id=CHAT_ID, text=mesaj, parse_mode="HTML")
-
+# Gündə 1 dəfə işlətmək üçün döngü
 while True:
-  scraping_and_sent()
-  time.sleep(86400)
+    scraping_and_sent()
+    time.sleep(86400)  # 24 saat
